@@ -302,6 +302,23 @@ Note: the `userToken` secret is NOT returned here — it is only available at cr
 | 429 | Rate limited | Wait and retry |
 | 500 | Server error | Retry once, then report to user |
 
+## Forex / CFD Specifics
+
+This section applies when the agent-portfolio is trading forex pairs (EUR/USD, etc.) and CFDs.
+
+- **Symbol resolution.** EUR/USD has `internalSymbolFull = "EURUSD"`. Resolve via `/api/v1/market-data/search?internalSymbolFull=EURUSD` and use the returned `instrumentId`. Cache the ID for the cycle but never hardcode it across cycles.
+- **Long vs short.** Long uses `IsBuy: true`; short uses `IsBuy: false`. Same instrument, opposite direction. Both are first-class on a CFD pair.
+- **Leverage.** `Leverage` is an integer. EU retail caps EUR/USD at 30. Use 5–20 for aggressive intraday, 1–2 for overnight, 1 for size-conservative tests.
+- **Stops & targets are price levels, not pip distances.** `StopLossRate` / `TakeProfitRate` accept absolute quote prices (e.g. `1.0820`). Compute as `entry ± pips * 0.0001` for EUR/USD.
+- **Trailing stop.** `IsTslEnabled: true` enables a trailing stop, with the rate field interpreted as the initial trail distance.
+- **Spread.** Typical EUR/USD spread on eToro is 0.5–1.5 pips. Treat ~1 pip round-trip as the cost in expected-value math; widen during news / off-hours / weekends.
+- **Overnight swap (rollover).** Positions held past 22:00 GMT incur a swap fee. Triple swap on Wednesday night (weekend rollover). Sign depends on direction (long EUR/USD vs short EUR/USD have opposite swaps). For short-term plays, prefer flat-by-EOD.
+- **Headless / autonomous mode.** When the skill is invoked from a recurring routine (e.g. an aggressive day-trading agent), per-trade user approval defaults to **off**. The "ask user before each trade" steps in this skill do not apply during routine cycles.
+
+## Chucky Override (this repo only)
+
+The percentage-only **User-facing numbers rule** in this skill is **overridden inside this repo** (`etoro-chucky`). The Chucky agent reports **dollar amounts first, with percentages alongside where useful** in logs, the README banner, and commit messages. This override applies only here; in any other deployment of this skill the percentage-only rule still stands.
+
 ## Additional Documentation
 
 For full API documentation see: https://api-portal.etoro.com/llms.txt
