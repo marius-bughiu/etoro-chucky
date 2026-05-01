@@ -43,6 +43,12 @@ def load_dotenv() -> None:
             os.environ[k] = v
 
 
+USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+    "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
+)
+
+
 def fetch_pnl(token: str) -> dict:
     req = urllib.request.Request(
         f"{BASE}/trading/info/real/pnl",
@@ -51,6 +57,7 @@ def fetch_pnl(token: str) -> dict:
             "x-api-key": PUBLIC_API_KEY,
             "x-user-key": token,
             "Accept": "application/json",
+            "User-Agent": USER_AGENT,
         },
         method="GET",
     )

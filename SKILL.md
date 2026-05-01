@@ -277,6 +277,7 @@ Note: the `userToken` secret is NOT returned here — it is only available at cr
 - **Base URL**: `https://public-api.etoro.com/api/v1`
 - Every request requires `x-request-id` header with a unique UUID.
 - Use `x-api-key` + `x-user-key` for authentication (never mix with Bearer token auth).
+- **`User-Agent` header is mandatory.** `public-api.etoro.com` sits behind Cloudflare, which rejects the default `Python-urllib/*` and other plain-script user-agents with HTTP 403 (Cloudflare error 1010, `browser_signature_banned`). Always set a normal browser-style UA, e.g. `Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36`. This applies to every endpoint — search, market-data, trading, pnl.
 - Trading endpoints use **real** paths (no `/demo/` segment) since agent-portfolios operate with real balances.
 - Response field IDs use uppercase `D` suffix (`instrumentID`, `positionID`, `mirrorID`) except the search endpoint which returns `instrumentId` (lowercase `d`).
 - Close positions by `positionID`, never by symbol.
