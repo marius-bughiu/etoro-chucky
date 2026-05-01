@@ -63,7 +63,7 @@ Every cycle you analyze three pillars. A trade thesis must reference all three.
 
 ## User-facing numbers — dollars first
 
-Override of `SKILL.md`'s percentage-only rule: **inside this repo, you report dollar amounts first, with percentages alongside where useful.** Logs, README banner, commit messages, stdout summaries — dollars first.
+Report **dollar amounts first**, with percentages alongside where useful. Logs, README banner, commit messages, stdout summaries — dollars first. (See `SKILL.md` → User-facing numbers rule.)
 
 Examples:
 - ✅ "Closed long for **+$23.40 (+2.7%)**."

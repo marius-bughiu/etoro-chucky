@@ -7,16 +7,16 @@ description: Guides agents through creating, retrieving, and trading on behalf o
 
 ## About
 
-An **agent-portfolio** is a dedicated eToro account that starts with **$10,000 in virtual trading capital** — this is the balance the agent uses to open and manage positions — **do not mention the virtual balance to the user** as it will confuse them. When the user creates one, they specify an `investmentAmountInUsd` which is **real money deducted from their real eToro account balance** to copy-trade the agent-portfolio. Positions opened by the agent are mirrored proportionally into the user's real account — e.g. if the user invests $2,000 (real) against the $10,000 virtual balance, each position is copied at 20% of its size with real funds.
+An **agent-portfolio** is a dedicated eToro account that starts with **$10,000 in virtual trading capital** — this is the balance the agent uses to open and manage positions. When the user creates one, they specify an `investmentAmountInUsd` which is **real money deducted from their real eToro account balance** to copy-trade the agent-portfolio. Positions opened by the agent are mirrored proportionally into the user's real account — e.g. if the user invests $2,000 (real) against the $10,000 virtual balance, each position is copied at 20% of its size with real funds.
 
 The agent's job is to trade on behalf of the agent-portfolio using the agent-portfolio's own user token and API key. All trading endpoints use `/api/v1/trading/execution/market-open-orders/...` and `/api/v1/trading/execution/market-close-orders/...` (real endpoints, no `/demo/` segment) authenticated with the agent-portfolio's credentials.
 
-**IMPORTANT — User-facing numbers rule:** NEVER show the user absolute dollar amounts from the agent-portfolio's internal balance. Always translate to **percentages of equity** when communicating with the user. Examples:
-- PnL: say "+2.1%" not "+$34.70"
-- Cash: say "75% cash" not "$7,500 cash"
-- Allocations: say "invest 2.5% in AAPL" not "invest $250 in AAPL"
+**User-facing numbers rule:** Report **dollar amounts first**, with percentages of equity alongside where useful. Examples:
+- PnL: "+$34.70 (+2.1%)"
+- Cash: "$7,500 cash (75%)"
+- Allocations: "invest $250 in AAPL (2.5%)"
 
-The internal dollar amounts are for the agent's calculations only and are not customer-facing.
+Dollars are the primary number in logs, the README banner, commit messages, and any stdout output.
 
 ## Conversational Flow
 
@@ -173,7 +173,7 @@ POST https://public-api.etoro.com/api/v1/trading/execution/market-open-orders/by
 }
 ```
 
-- `Amount` is in USD, drawn from the agent-portfolio's balance. Calculate based on the virtual balance (do not expose this to the user).
+- `Amount` is in USD, drawn from the agent-portfolio's balance.
 - Only include optional fields (`StopLossRate`, `TakeProfitRate`, `Leverage`, `IsTslEnabled`) if the user specified them.
 - `IsBuy`: `true` for long, `false` for short.
 
@@ -317,10 +317,6 @@ This section applies when the agent-portfolio is trading forex pairs (EUR/USD, e
 - **Spread.** Typical EUR/USD spread on eToro is 0.5–1.5 pips. Treat ~1 pip round-trip as the cost in expected-value math; widen during news / off-hours / weekends.
 - **Overnight swap (rollover).** Positions held past 22:00 GMT incur a swap fee. Triple swap on Wednesday night (weekend rollover). Sign depends on direction (long EUR/USD vs short EUR/USD have opposite swaps). For short-term plays, prefer flat-by-EOD.
 - **Headless / autonomous mode.** When the skill is invoked from a recurring routine (e.g. an aggressive day-trading agent), per-trade user approval defaults to **off**. The "ask user before each trade" steps in this skill do not apply during routine cycles.
-
-## Chucky Override (this repo only)
-
-The percentage-only **User-facing numbers rule** in this skill is **overridden inside this repo** (`etoro-chucky`). The Chucky agent reports **dollar amounts first, with percentages alongside where useful** in logs, the README banner, and commit messages. This override applies only here; in any other deployment of this skill the percentage-only rule still stands.
 
 ## Additional Documentation
 
