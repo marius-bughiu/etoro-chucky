@@ -148,7 +148,9 @@ Before placing any trade, resolve the instrument ID dynamically:
 GET https://public-api.etoro.com/api/v1/market-data/search?internalSymbolFull=<SYMBOL>
 ```
 
-Extract `instrumentId` (lowercase `d` — this is the only endpoint that uses lowercase) from `items[]`. Verify exact match on `internalSymbolFull`. Never hardcode instrument IDs.
+Extract `internalInstrumentId` from `items[]`. Verify exact match on `internalSymbolFull` (e.g. `EURUSD`). Never hardcode instrument IDs across cycles. Observed: EUR/USD → `internalInstrumentId: 1`, `internalAssetClassName: "Forex"`, `isCurrentlyTradable: true`, `isBuyEnabled: true`.
+
+> Historical note: earlier versions of this doc referenced a lowercase `instrumentId` field. The live response uses `internalInstrumentId` (camelCase, capital `I` on `Instrument`). Pass that integer as the `InstrumentID` value in the trading request bodies below.
 
 Optionally enrich with metadata:
 ```
