@@ -174,14 +174,15 @@ def render_banner() -> str:
 
 def patch_readme(banner: str) -> None:
     if not README.exists():
-        # Bootstrap: write a minimal README with just the banner. The full README
-        # body is normally written by hand below the banner.
+        # Bootstrap: write a minimal README with just the banner. The full
+        # README body is normally written by hand above the banner.
         README.write_text(banner + "\n", encoding="utf-8")
         return
     text = README.read_text(encoding="utf-8")
     if START not in text or END not in text:
-        # Banner markers absent — prepend.
-        README.write_text(banner + "\n\n" + text, encoding="utf-8")
+        # Banner markers absent — append at the bottom.
+        sep = "" if text.endswith("\n") else "\n"
+        README.write_text(text + sep + "\n" + banner + "\n", encoding="utf-8")
         return
     pre = text.split(START)[0]
     post = text.split(END, 1)[1]
