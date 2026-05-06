@@ -6,11 +6,12 @@ Run one trading cycle.
 
 - `python tools/portfolio_state.py`   — current eToro portfolio (equity, positions, available cash)
 - `python tools/session_clock.py`     — which FX session we're in
-- `python tools/eurusd_snapshot.py`   — EUR/USD multi-timeframe OHLC + ATR + DXY
+- `python tools/eurusd_snapshot.py`   — EUR/USD multi-timeframe OHLC + ATR + DXY (check `data_quality` block — if any pillar shows `"missing"`, derate confidence accordingly)
+- `python tools/calendar_fetch.py`    — high-impact USD/EUR events in the next 24h (structured; if `source: "none"`, fall back to `WebFetch` below)
 
 ## Data — gather these yourself (no scraper scripts)
 
-- **Calendar:** `WebFetch` against `https://www.forexfactory.com/calendar` (or `https://www.investing.com/economic-calendar/`). Extract high-impact USD + EUR events in the next 24h.
+- **Calendar (fallback only):** if `calendar_fetch.py` returned `source: "none"`, then `WebFetch` against `https://www.forexfactory.com/calendar` or `https://www.investing.com/economic-calendar/` and extract high-impact USD + EUR events in the next 24h.
 - **Sentiment:** `WebSearch` for `EUR USD` news in the last 6h, ECB/Fed speakers today, geopolitical surprises that move EUR or USD. Optionally `WebFetch` `forexlive.com` or `reuters.com` EUR/USD tags for fresh headlines.
 - **DXY** comes from `eurusd_snapshot.py` — no extra fetch needed.
 
