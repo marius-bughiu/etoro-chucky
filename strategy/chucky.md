@@ -54,13 +54,18 @@ We don't take random shots. Every trade fits one of these five buckets, and we n
 
 ### 3. Compression breakout
 
-**When:** any session, but most often London-open.
+**When:** any session, but most often London-open. Two variants — pick one.
 
-**Setup:** ATR(20) on H1 is in the **lowest quartile of the last 5 days** (snapshot reports this). Price has been rotating in a tight range for 6+ hours. We don't pre-commit a side — we wait for the first M15 close beyond the range and lean into it with a tight stop just back inside.
+**Variant A — clean break (default):** ATR(20) on H1 is in the **lowest quartile of the last 5 days** (snapshot reports this). Price has been rotating in a tight range for 6+ hours. We don't pre-commit a side — we wait for the first M15 close beyond the range and lean into it with a tight stop just back inside.
 
-**Sizing:** 1.0% account risk. Leverage 10×. Stop = inside the range by 5–10 pips.
+- **Sizing:** 1.0% account risk. Leverage 10×. Stop = inside the range by 5–10 pips.
+- **Target:** measured-move = range height projected from the breakout point.
 
-**Target:** measured-move = range height projected from the breakout point.
+**Variant B — dead-tape micro-break:** use only when Variant A's trigger hasn't printed in the last 4 hours AND M5 ATR has been below 2.5p for the entire compression window. The trigger is *M15 ATR expanding ≥ 1.5× its 20-bar average AND an M15 close within 2 pips of the range edge*, in the direction of the expansion. This is a B-grade signal — we take it because the alternative is bleeding spread waiting for an A-grade print that may never come.
+
+- **Sizing:** **0.5% account risk (half)**. Leverage 5×. Stop = 1× M15-ATR back inside the range.
+- **Target:** half-measured-move, or M15-ATR × 2, whichever is tighter. Trail aggressively after +1× M15-ATR profit.
+- **Counter-thesis is mandatory** (it already is for every open — restating). Variant B trades that survive the skeptic at half-size are the only ones worth taking in dead tape. If the skeptic kills it, kill it.
 
 ### 4. News-driven flip (highest variance, smallest size)
 

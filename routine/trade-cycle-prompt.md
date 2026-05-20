@@ -8,6 +8,7 @@ Run one trading cycle.
 - `python tools/session_clock.py`     — which FX session we're in
 - `python tools/eurusd_snapshot.py`   — EUR/USD multi-timeframe OHLC + ATR + DXY (check `data_quality` block — if any pillar shows `"missing"`, derate confidence accordingly)
 - `python tools/calendar_fetch.py`    — high-impact USD/EUR events in the next 24h (structured; if `source: "none"`, fall back to `WebFetch` below)
+- `python tools/stand_down_counter.py` — consecutive stand-down streak + optional self-audit nudge (informational only; never overrides hard rules or the counter-thesis check)
 
 ## Data — gather these yourself (no scraper scripts)
 
