@@ -24,7 +24,7 @@ Calendar and sentiment? The model pulls those itself with `WebFetch` and `WebSea
 ---
 
 <!-- CHUCKY-BANNER:START -->
-## Live performance — last cycle 2026-05-28T19:50Z
+## Live performance — last cycle 2026-05-31T21:02Z
 
 **Open positions:** 0
 
@@ -32,7 +32,7 @@ Calendar and sentiment? The model pulls those itself with `WebFetch` and `WebSea
 |---|---|---|---|
 | 24h | n/a | n/a | 0 |
 | 7d | n/a | n/a | 0 |
-| 30d | -$5.13 | -1.03% | 1 |
+| 30d | n/a | n/a | 0 |
 | 12m | -$5.13 | -1.03% | 1 |
 | All-time | -$5.13 | -1.03% | 1 |
 
