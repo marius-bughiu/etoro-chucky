@@ -21,8 +21,10 @@ import csv
 import io
 import json
 import os
+import signal
 import subprocess
 import sys
+import tempfile
 import time
 from datetime import datetime, timezone
 
@@ -333,24 +335,74 @@ def gather_raw() -> dict:
     }
 
 
-def _gather_via_worker(budget_s: int = 70) -> dict:
+def _kill_tree(pid: int) -> None:
+    """Kill a process *and its descendants*. A wedged yfinance worker can spawn
+    grandchildren/threads; killing only the direct child leaves them holding
+    handles. On Windows use taskkill /T (whole tree); elsewhere kill the group."""
+    try:
+        if os.name == "nt":
+            subprocess.run(
+                ["taskkill", "/F", "/T", "/PID", str(pid)],
+                capture_output=True, timeout=10,
+            )
+        else:
+            os.killpg(os.getpgid(pid), signal.SIGKILL)
+    except Exception:  # noqa: BLE001
+        pass
+
+
+def _gather_via_worker(budget_s: int = 30) -> dict:
     """Spawn this script with --worker and hard-kill it if it overruns.
 
     A subprocess is the only reliable bound: yfinance can hang while holding
-    the GIL, which defeats thread/signal timeouts in-process. If the worker is
-    killed or its output won't parse, every source degrades to 'missing'."""
+    the GIL, which defeats thread/signal timeouts in-process.
+
+    CRITICAL (the bug that wedged ~1650 cycles): do NOT use capture_output /
+    PIPE here. On Windows a wedged child (or any grandchild it spawned) keeps
+    the stdout pipe's write-end open, so the post-kill ``communicate()`` blocks
+    *forever* reading until EOF — the 'hard timeout' never actually returns.
+    Instead we redirect the worker's stdout to a real temp FILE (no pipe to
+    drain) and bound it with ``proc.wait(timeout)``, which touches no pipes. On
+    overrun we kill the whole process tree. The parent therefore ALWAYS returns
+    within ~budget_s, degrading every source to 'missing' on failure."""
+    out_path = None
     try:
-        proc = subprocess.run(
-            [sys.executable, os.path.abspath(__file__), "--worker"],
-            capture_output=True, text=True, timeout=budget_s,
-        )
-        if proc.returncode == 0 and proc.stdout.strip():
-            return json.loads(proc.stdout)
-        return _empty_raw(f"worker rc={proc.returncode}; stderr={proc.stderr.strip()[:200]}")
-    except subprocess.TimeoutExpired:
-        return _empty_raw(f"worker exceeded {budget_s}s hard timeout (upstream wedged) — killed")
+        fd, out_path = tempfile.mkstemp(suffix=".json", prefix="eurusd_snap_")
+        os.close(fd)
+        creationflags = subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0
+        with open(out_path, "w", encoding="utf-8") as out_f:
+            proc = subprocess.Popen(
+                [sys.executable, os.path.abspath(__file__), "--worker"],
+                stdout=out_f, stderr=subprocess.DEVNULL,
+                creationflags=creationflags,
+            )
+            try:
+                proc.wait(timeout=budget_s)
+            except subprocess.TimeoutExpired:
+                _kill_tree(proc.pid)
+                try:
+                    proc.wait(timeout=10)
+                except subprocess.TimeoutExpired:
+                    pass  # tree already force-killed; don't let reap-wait mask the real reason
+                return _empty_raw(
+                    f"worker exceeded {budget_s}s hard timeout (upstream wedged) — tree killed"
+                )
+        with open(out_path, "r", encoding="utf-8") as f:
+            data = f.read().strip()
+        if proc.returncode == 0 and data:
+            try:
+                return json.loads(data)
+            except json.JSONDecodeError as e:
+                return _empty_raw(f"worker output unparseable: {e!r}")
+        return _empty_raw(f"worker rc={proc.returncode}; no usable output")
     except Exception as e:  # noqa: BLE001
         return _empty_raw(f"worker spawn/parse failed: {e!r}")
+    finally:
+        if out_path:
+            try:
+                os.unlink(out_path)
+            except OSError:
+                pass
 
 
 def _empty_raw(reason: str) -> dict:
