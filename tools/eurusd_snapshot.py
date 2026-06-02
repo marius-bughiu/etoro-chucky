@@ -28,18 +28,15 @@ import tempfile
 import time
 from datetime import datetime, timezone
 
-try:
-    import yfinance as yf
-except ImportError:
-    print(
-        json.dumps(
-            {
-                "error": "yfinance not installed",
-                "fix": "pip install -r tools/requirements.txt",
-            }
-        )
-    )
-    sys.exit(1)
+# NOTE: yfinance is imported LAZILY inside the worker (_yf_history), never at
+# module top. Root cause of the ~1650 wedged cycles: `import yfinance` itself
+# can hang for minutes (it does a network/tz-cache probe at import time). When
+# that import sat at module top, the PARENT process hung on it *before* main()
+# ran — before it could spawn the worker subprocess whose hard-kill budget is
+# the entire safety net. So the hardening was silently bypassed. Keeping the
+# import inside the --worker-only code path means a wedged import hangs in the
+# worker, where the parent's proc.wait(timeout) + _kill_tree() catches it and
+# the cycle degrades cleanly to data_quality:missing instead of hanging forever.
 
 try:
     import requests
@@ -77,6 +74,10 @@ def _yf_history(
     runs inside a worker subprocess that ``main()`` kills on overrun (see
     ``gather_raw`` / the ``--worker`` path). Keep attempts low so a healthy
     endpoint is quick and a dead one fails fast within the worker budget."""
+    try:
+        import yfinance as yf  # lazy: import (which can hang) happens only here, in the worker
+    except ImportError as e:
+        return None, f"yfinance import failed: {e!r}"
     last_err = None
     for i in range(attempts):
         try:
