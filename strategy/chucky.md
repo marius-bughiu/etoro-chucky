@@ -12,7 +12,7 @@ Read `CLAUDE.md` for the non-negotiable rules. Read this for *how to find the tr
 
 Grow equity aggressively on **EUR/USD only**. Both long and short. Intraday-biased. We are not a position trader. We are not a swing trader. We are a knife.
 
-We hunt **expansion** — sessions, releases, structure breaks. We avoid **chop** — middle-of-Asia drift, holiday tape, lunchtime NY.
+We hunt **expansion** when it's offered — sessions, releases, structure breaks. When the tape goes to chop, we fade the box — half size, tight stops, quick exits — until expansion returns. Holiday tape and the NY lunch hour are still hands-off.
 
 ---
 
@@ -28,15 +28,15 @@ That last one — never. Burn it. We don't write essays. We take positions.
 
 ---
 
-## The five edges we exploit
+## The six edges we exploit
 
-We don't take random shots. Every trade fits one of these five buckets, and we name the bucket in the thesis.
+We don't take random shots. Every trade fits one of these six buckets, and we name the bucket in the thesis.
 
 ### 1. Session momentum (highest hit-rate)
 
 **When:** London open (07:00–10:00 UTC) or NY open (13:00–16:00 UTC).
 
-**Setup:** the prior 2-hour range gets broken, M15 closes outside it, momentum is one-sided (3 of last 5 M15 candles in the same direction). DXY agrees (rolling the opposite way of EUR/USD).
+**Setup:** the prior 1-hour range (or the prior session's high/low, whichever is tighter) gets broken, M15 closes outside it, momentum is one-sided (2 of last 5 M15 candles in the same direction). DXY is not actively against — flat or agreeing both count.
 
 **Sizing:** 1.0–1.5% account risk. Leverage 10×. Stop just inside the broken range.
 
@@ -56,12 +56,12 @@ We don't take random shots. Every trade fits one of these five buckets, and we n
 
 **When:** any session, but most often London-open. Two variants — pick one.
 
-**Variant A — clean break (default):** ATR(20) on H1 is in the **lowest quartile of the last 5 days** (snapshot reports this). Price has been rotating in a tight range for 6+ hours. We don't pre-commit a side — we wait for the first M15 close beyond the range and lean into it with a tight stop just back inside.
+**Variant A — clean break (default):** ATR(20) on H1 is in the **lower half of the last 5 days** (snapshot reports this). Price has been rotating in a tight range for 3+ hours. We don't pre-commit a side — we wait for the first **M5 close beyond the range that's confirmed by the next M5 print continuing in that direction** (no immediate reversal), and lean in with a tight stop just back inside.
 
-- **Sizing:** 1.0% account risk. Leverage 10×. Stop = inside the range by 5–10 pips.
+- **Sizing:** 1.0% account risk. Leverage 10×. Stop = inside the range by 3–6 pips.
 - **Target:** measured-move = range height projected from the breakout point.
 
-**Variant B — dead-tape micro-break:** use only when Variant A's trigger hasn't printed in the last 4 hours AND M5 ATR has been below 2.5p for the entire compression window. The trigger is *M15 ATR expanding ≥ 1.5× its 20-bar average AND an M15 close within 2 pips of the range edge*, in the direction of the expansion. This is a B-grade signal — we take it because the alternative is bleeding spread waiting for an A-grade print that may never come.
+**Variant B — dead-tape micro-break:** use only when Variant A's trigger hasn't printed in the last 4 hours AND M5 ATR has been below 2.5p for the entire compression window. The trigger is *M15 ATR expanding ≥ 1.3× its 20-bar average **OR** an M15 close within 4 pips of the range edge*, in the direction of the expansion or the edge approach respectively. This is a B-grade signal — we take it because the alternative is bleeding spread waiting for an A-grade print that may never come.
 
 - **Sizing:** **0.5% account risk (half)**. Leverage 5×. Stop = 1× M15-ATR back inside the range.
 - **Target:** half-measured-move, or M15-ATR × 2, whichever is tighter. Trail aggressively after +1× M15-ATR profit.
@@ -86,6 +86,24 @@ We don't take random shots. Every trade fits one of these five buckets, and we n
 **Setup:** DXY is moving in the right direction, recent ECB/Fed speak supports your side, no contradicting geopolitical headline in the last 6h. This is not a trade by itself — it's a green light to size up by 50% on top of one of the four above.
 
 **Sizing:** add 0.5% account risk on top of the base setup, never more.
+
+### 6. Range fade (the chop bucket)
+
+**When:** any session except news blackout windows. H1 price has held a defined box (high–low spread ≤ 80 pips) for **≥ 8 hours**, H1 ATR(20) is in the lower half of the last 5 days, AND no high-impact USD/EUR release scheduled in the next **2 hours**.
+
+**Setup:** M5 print within **6 pips** of the box edge AND momentum dying into it — either M5 ATR < 2.0p on the approach, or two consecutive M5 small-body / doji candles at the edge.
+
+**Side:** Fade. Short near the high edge, long near the low edge. Never fade in the direction the box would break toward if DXY is pushing hard the same way.
+
+**Sizing:** 0.5% account risk. Leverage 5×.
+
+**Stop:** 5 pips beyond the box edge (total risk per trade ≈ 11p including the 6p approach buffer).
+
+**Target:** mid-box as primary (take half off), trail the second half if it punches through. **Minimum reward:risk = 2:1**, otherwise skip.
+
+**Kill conditions:** H1 close beyond the box → cancel pending / close open immediately; calendar release lands inside hold → close.
+
+**Counter-thesis is mandatory** (as for every open).
 
 ---
 
@@ -151,7 +169,7 @@ This is the thinking, not the code. The code does not decide. You decide.
 1. **Read portfolio state.** What's open? What's the unrealized P&L? Am I in revenge-lockout from a prior cycle? Is total open risk already near the 6% cap?
 2. **Read the calendar.** Any high-impact USD or EUR event in the next 30 min? If yes → no new entries unless you're explicitly playing setup #4 (news flip).
 3. **Read sentiment.** Last 6h headlines. ECB / Fed speakers today. Geopolitical surprises. DXY level + 1d/5d trend.
-4. **Read the session clock.** Asia-dead → only setup #2 is on the table. London-open / NY-open → setups #1 and #3 are live. Lunchtime NY → strong bias to stand down.
+4. **Read the session clock.** Asia-dead → setups #2 and #6 are on the table. London-open / NY-open → setups #1, #3, and #6 are live. Lunchtime NY → only #6 if the box is clean; otherwise stand down.
 5. **Read multi-timeframe price.** H4 trend (the regime). H1 structure (the playing field). M15 momentum (the trigger). M5 entry (the timing).
 6. **Match the tape to a setup.** Name the bucket out loud in the log: *"This is setup #1 — London-open momentum break."* If you can't name a bucket, you don't have a trade.
 7. **Form the thesis.** 2–3 sentences. State direction, size, leverage, stop, target, expected hold time. Reference all three pillars (price, calendar, sentiment).
@@ -181,6 +199,6 @@ When you stand down, log it with the reason. Then ride the next cycle. The marke
 
 ## A word on "aggressive"
 
-Chucky is aggressive in **conviction and sizing on A+ setups**, not in frequency. A degenerate is the trader who takes a B- setup just because they're bored. We are not that. When the tape sets up clean, we hit it hard. When it doesn't, we wait.
+Chucky is aggressive in **conviction and sizing on A+ setups**, and in **showing up to fade the box** when expansion isn't on offer. We are not aggressive in *forcing* trades — but going 50+ cycles in a clean box with zero attempts means we're missing Setup #6, not being patient. A degenerate takes a B- setup because they're bored; we take Setup #6 because the box itself is the trade. When the tape sets up clean, we hit it hard. When it chops, we fade the edges.
 
 That's the edge. That's the whole game.
