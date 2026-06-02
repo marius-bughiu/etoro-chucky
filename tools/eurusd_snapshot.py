@@ -20,6 +20,8 @@ from __future__ import annotations
 import csv
 import io
 import json
+import os
+import subprocess
 import sys
 import time
 from datetime import datetime, timezone
@@ -62,10 +64,17 @@ def _yf_history(
     ticker: str,
     period: str,
     interval: str,
-    timeout: int = 15,
-    attempts: int = 3,
+    timeout: int = 7,
+    attempts: int = 1,
 ):
-    """Fetch a yfinance history dataframe with timeout + exponential backoff."""
+    """Fetch a yfinance history dataframe.
+
+    NOTE: yfinance's own ``timeout`` kwarg is unreliable — a wedged Yahoo
+    endpoint can hang while holding the GIL, which defeats in-process
+    (thread-based) timeouts. The real safety net is that all of this fetching
+    runs inside a worker subprocess that ``main()`` kills on overrun (see
+    ``gather_raw`` / the ``--worker`` path). Keep attempts low so a healthy
+    endpoint is quick and a dead one fails fast within the worker budget."""
     last_err = None
     for i in range(attempts):
         try:
@@ -79,8 +88,29 @@ def _yf_history(
                 return df, None
         except Exception as e:  # noqa: BLE001
             last_err = repr(e)
-        time.sleep(2**i)
+        if i + 1 < attempts:
+            time.sleep(1)
     return None, last_err or "empty result after retries"
+
+
+def _keyless_spot(warnings: list[str]):
+    """Keyless EUR/USD spot reference. No OHLC — a courtesy price only.
+
+    Used to populate current_price when all OHLC feeds are down, clearly
+    flagged so the LLM never mistakes a bare spot for tradeable structure."""
+    sources = [
+        ("open.er-api.com", "https://open.er-api.com/v6/latest/EUR"),
+        ("frankfurter", "https://api.frankfurter.app/latest?from=EUR&to=USD"),
+    ]
+    for name, url in sources:
+        try:
+            r = requests.get(url, timeout=8)
+            usd = (r.json().get("rates") or {}).get("USD")
+            if usd:
+                return {"price": round(float(usd), 5), "source": name}
+        except Exception as e:  # noqa: BLE001
+            warnings.append(f"keyless spot {name} failed: {e!r}")
+    return None
 
 
 def _df_to_candles(df) -> list[dict]:
@@ -285,14 +315,66 @@ def fetch_dxy(warnings: list[str]) -> tuple[dict, str]:
 # ---------- Main ----------
 
 
-def main() -> None:
+def gather_raw() -> dict:
+    """Do the actual upstream fetching. Runs inside the worker subprocess so a
+    GIL-holding hang can be killed by the parent. Returns JSON-safe dict."""
     warnings: list[str] = []
-
     h1, h1_src = fetch_eurusd_tf("5d", "1h", "60", warnings)
     # Stooq doesn't expose a clean 15m feed; if Stooq is needed we'll use 5m.
     m15, m15_src = fetch_eurusd_tf("2d", "15m", "5", warnings)
     m5, m5_src = fetch_eurusd_tf("1d", "5m", "5", warnings)
     dxy, dxy_src = fetch_dxy(warnings)
+    return {
+        "h1": h1, "h1_src": h1_src,
+        "m15": m15, "m15_src": m15_src,
+        "m5": m5, "m5_src": m5_src,
+        "dxy": dxy, "dxy_src": dxy_src,
+        "warnings": warnings,
+    }
+
+
+def _gather_via_worker(budget_s: int = 70) -> dict:
+    """Spawn this script with --worker and hard-kill it if it overruns.
+
+    A subprocess is the only reliable bound: yfinance can hang while holding
+    the GIL, which defeats thread/signal timeouts in-process. If the worker is
+    killed or its output won't parse, every source degrades to 'missing'."""
+    try:
+        proc = subprocess.run(
+            [sys.executable, os.path.abspath(__file__), "--worker"],
+            capture_output=True, text=True, timeout=budget_s,
+        )
+        if proc.returncode == 0 and proc.stdout.strip():
+            return json.loads(proc.stdout)
+        return _empty_raw(f"worker rc={proc.returncode}; stderr={proc.stderr.strip()[:200]}")
+    except subprocess.TimeoutExpired:
+        return _empty_raw(f"worker exceeded {budget_s}s hard timeout (upstream wedged) — killed")
+    except Exception as e:  # noqa: BLE001
+        return _empty_raw(f"worker spawn/parse failed: {e!r}")
+
+
+def _empty_raw(reason: str) -> dict:
+    return {
+        "h1": [], "h1_src": "missing",
+        "m15": [], "m15_src": "missing",
+        "m5": [], "m5_src": "missing",
+        "dxy": {"error": "DXY data unavailable"}, "dxy_src": "missing",
+        "warnings": [reason],
+    }
+
+
+def main() -> None:
+    raw = _gather_via_worker()
+    h1, h1_src = raw["h1"], raw["h1_src"]
+    m15, m15_src = raw["m15"], raw["m15_src"]
+    m5, m5_src = raw["m5"], raw["m5_src"]
+    dxy, dxy_src = raw["dxy"], raw["dxy_src"]
+    warnings = list(raw.get("warnings", []))
+
+    # Keyless spot reference — only needed when OHLC is entirely missing.
+    spot = None
+    if not h1 and not m15 and not m5:
+        spot = _keyless_spot(warnings)
 
     out = {
         "now_utc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
@@ -303,10 +385,12 @@ def main() -> None:
             "eurusd_m15": m15_src,
             "eurusd_m5": m5_src,
             "dxy": dxy_src,
+            "spot_fallback": spot["source"] if spot else None,
             "fetched_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
             "warnings": warnings,
         },
-        "current_price": h1[-1]["c"] if h1 else None,
+        "current_price": h1[-1]["c"] if h1 else (spot["price"] if spot else None),
+        "spot_reference": spot,
         "today_so_far": today_range(h1),
         "prior_day": prior_day_levels(h1),
         "timeframes": {
@@ -323,4 +407,9 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    if "--worker" in sys.argv:
+        # Child process: do the (possibly hanging) upstream fetching and emit
+        # raw JSON. The parent kills us if we overrun its hard budget.
+        print(json.dumps(gather_raw(), default=str))
+    else:
+        main()
