@@ -24,7 +24,7 @@ Calendar and sentiment? The model pulls those itself with `WebFetch` and `WebSea
 ---
 
 <!-- CHUCKY-BANNER:START -->
-## Live performance — last cycle 2026-06-03T08:53Z
+## Live performance — last cycle 2026-06-03T09:05Z
 
 **Open positions:** 1 — open now: short $2,500.00 @ 1.1608
 
