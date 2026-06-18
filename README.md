@@ -24,7 +24,7 @@ Calendar and sentiment? The model pulls those itself with `WebFetch` and `WebSea
 ---
 
 <!-- CHUCKY-BANNER:START -->
-## Live performance — last cycle 2026-06-17T00:03Z
+## Live performance — last cycle 2026-06-18T07:04Z
 
 **Open positions:** 0
 
