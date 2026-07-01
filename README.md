@@ -24,14 +24,14 @@ Calendar and sentiment? The model pulls those itself with `WebFetch` and `WebSea
 ---
 
 <!-- CHUCKY-BANNER:START -->
-## Live performance — last cycle 2026-07-01T00:33Z
+## Live performance — last cycle 2026-07-01T00:50Z
 
 **Open positions:** 0
 
 | Window | P&L | Return % | Trades |
 |---|---|---|---|
 | 24h | n/a | n/a | 0 |
-| 7d | +$0.53 | +0.01% | 1 |
+| 7d | n/a | n/a | 0 |
 | 30d | -$100.43 | -0.62% | 4 |
 | 12m | -$105.56 | -0.63% | 5 |
 | All-time | -$105.56 | -0.63% | 5 |
